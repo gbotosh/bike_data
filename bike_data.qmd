@@ -1,0 +1,52 @@
+---
+title: "Bike Data Project"
+author: "Gbotoso Olaoluwa"
+format: html
+editor: visual
+---
+
+```{r}
+# Load the required packages
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, here, DBI, odbc)
+```
+```{r}
+# Connect to SQL Server database
+# Check available drivers
+
+odbc::odbcListDrivers()
+
+con <- dbConnect(odbc::odbc(),
+                 Driver = "SQL Server",
+                 Server = "DESKTOP-6QFHSBB",
+                 Database = "bike_data")
+```
+
+```{r}
+my_query <- "WITH my_cte AS(
+              SELECT * 
+              FROM bike_data.dbo.bike_share_yr_0
+              UNION
+              SELECT * 
+              FROM bike_data.dbo.bike_share_yr_1)
+              SELECT 
+              dteday,
+              season,
+              a.yr,
+              weekday,
+              hr,
+              rider_type,
+              price,
+              COGS,
+              riders * price AS revenue,
+              riders * price - COGS * riders AS profit
+              FROM my_cte a
+              LEFT JOIN bike_data.dbo.cost_table b
+              ON a.yr = b.yr"
+my_df <- dbGetQuery(con, my_query)
+
+head(my_df)
+
+dbDisconnect(con)
+```
+
